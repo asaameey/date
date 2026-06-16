@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Will you go on a date with me?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #0C0509;
+      --bg2:         #16080F;
+      --surface:     #220D17;
+      --surface2:    #2C1220;
+      --border:      #4A1F32;
+      --text:        #FFF0F4;
+      --muted:       #B8808F;
+      --accent:      #E05572;
+      --accent2:     #F2A0B8;
+      --gold:        #D4A853;
+      --gold2:       #EEC87A;
+      --accent-dim:  rgba(224,85,114,0.12);
+      --gold-dim:    rgba(212,168,83,0.10);
+      --radius:      18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* noise */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.038; pointer-events: none; z-index: 9999;
+    }
+
+    /* atmospheric background */
+    .bg-mesh {
+      position: fixed; inset: -20%;
+      background:
+        radial-gradient(ellipse 65% 55% at 18% 28%, rgba(210,70,95,0.20) 0%, transparent 68%),
+        radial-gradient(ellipse 50% 60% at 82% 72%, rgba(185,55,80,0.14) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 45% at 52% 48%, rgba(212,168,83,0.07) 0%, transparent 72%);
+      animation: meshDrift 14s ease-in-out infinite alternate;
+      pointer-events: none; z-index: 0;
+    }
+    @keyframes meshDrift {
+      0%   { transform: scale(1)    rotate(0deg); }
+      100% { transform: scale(1.09) rotate(2.5deg); }
+    }
+
+    /* petals */
+    .petals { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+    .petal {
+      position: absolute;
+      opacity: 0;
+      animation: petalFall linear infinite;
+    }
+    @keyframes petalFall {
+      0%   { transform: translateY(-30px) rotate(0deg)   translateX(0px);  opacity: 0; }
+      8%   { opacity: 0.75; }
+      88%  { opacity: 0.35; }
+      100% { transform: translateY(108vh) rotate(680deg) translateX(55px); opacity: 0; }
+    }
+
+    /* progress */
+    .progress {
+      position: fixed; top: 1.75rem; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 0.5rem; z-index: 200;
+    }
+    .prog-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border);
+      transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .prog-dot.active { width: 22px; border-radius: 4px; background: var(--accent); }
+    .prog-dot.done   { background: var(--gold); }
+
+    /* steps */
+    .step {
+      position: relative; z-index: 2;
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 5rem 1.5rem 2.5rem;
+      opacity: 0;
+    }
+    .step.active {
+      display: flex;
+      animation: stepIn 0.75s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+    .step.leaving {
+      display: flex;
+      animation: stepOut 0.45s cubic-bezier(0.7,0,1,0.4) forwards;
+    }
+    @keyframes stepIn  { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes stepOut { from { opacity:1; transform:translateY(0);    } to { opacity:0; transform:translateY(-28px); } }
+
+    /* ── STEP 1 ── */
+    .s1-wrap { text-align: center; max-width: 580px; }
+
+    .heart-svg {
+      width: 76px; height: 76px;
+      margin: 0 auto 2rem;
+      display: block;
+      animation: heartPulse 1.5s ease-in-out infinite;
+      filter: drop-shadow(0 0 18px rgba(224,85,114,0.55));
+    }
+    @keyframes heartPulse {
+      0%,100% { transform: scale(1);    }
+      14%     { transform: scale(1.16); }
+      28%     { transform: scale(1);    }
+      42%     { transform: scale(1.1);  }
+      56%     { transform: scale(1);    }
+    }
+
+    .eyebrow {
+      font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 1.5rem;
+    }
+
+    .s1-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.8rem, 9vw, 5.8rem);
+      font-weight: 600; line-height: 1.05;
+      color: var(--text); margin-bottom: 1.25rem;
+    }
+    .s1-title em { font-style: italic; color: var(--accent2); }
+
+    .gold-bar { width: 56px; height: 1px; margin: 0 auto 1.5rem; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+    .s1-sub {
+      font-size: 1.05rem; color: var(--muted); line-height: 1.75;
+      margin-bottom: 3rem; font-weight: 300;
+    }
+
+    .s1-btns { display: flex; gap: 1.25rem; justify-content: center; flex-wrap: wrap; align-items: center; }
+
+    /* yes button */
+    .btn-yes {
+      position: relative; overflow: hidden;
+      padding: 1rem 2.75rem;
+      background: linear-gradient(135deg, var(--accent) 0%, #BB3555 100%);
+      color: #fff; border: none; border-radius: 60px;
+      font-family: 'Jost', sans-serif; font-size: 1rem; font-weight: 500;
+      letter-spacing: 0.06em; cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+      box-shadow: 0 0 32px rgba(224,85,114,0.38), 0 6px 24px rgba(0,0,0,0.45);
+    }
+    .btn-yes::after {
+      content: '';
+      position: absolute; top: 0; left: -100%; width: 65%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+      animation: btnShimmer 3.2s ease-in-out infinite;
+    }
+    @keyframes btnShimmer { 0% { left:-100%; } 100% { left:210%; } }
+    .btn-yes:hover {
+      transform: scale(1.06) translateY(-3px);
+      box-shadow: 0 0 55px rgba(224,85,114,0.60), 0 10px 32px rgba(0,0,0,0.45);
+    }
+    .btn-yes:active { transform: scale(0.97); }
+
+    /* no button */
+    .btn-no {
+      padding: 1rem 2.75rem;
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 60px;
+      font-family: 'Jost', sans-serif; font-size: 1rem;
+      font-weight: 400; letter-spacing: 0.05em;
+      cursor: not-allowed; transition: border-color 0.2s;
+      /* will be moved to fixed position by JS */
+    }
+
+    /* ── SHARED ── */
+    .step-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.9rem, 6vw, 3.4rem);
+      font-weight: 600; line-height: 1.1;
+      margin-bottom: 0.6rem; text-align: center;
+    }
+    .step-title em { font-style: italic; color: var(--accent2); }
+
+    .step-sub {
+      color: var(--muted); font-size: 0.92rem;
+      text-align: center; line-height: 1.65;
+      margin-bottom: 2rem;
+    }
+
+    .btn-primary {
+      position: relative; overflow: hidden;
+      padding: 0.95rem 2.25rem;
+      background: linear-gradient(135deg, var(--accent) 0%, #BB3555 100%);
+      color: #fff; border: none; border-radius: 60px;
+      font-family: 'Jost', sans-serif; font-size: 0.95rem; font-weight: 500;
+      letter-spacing: 0.06em; cursor: pointer;
+      box-shadow: 0 0 28px rgba(224,85,114,0.30), 0 4px 18px rgba(0,0,0,0.35);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, opacity 0.2s;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 0 45px rgba(224,85,114,0.50), 0 8px 28px rgba(0,0,0,0.4);
+    }
+    .btn-primary:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    .btn-secondary {
+      padding: 0.9rem 1.9rem;
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 60px;
+      font-family: 'Jost', sans-serif; font-size: 0.9rem;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+    .btn-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.75rem; }
+
+    /* ── STEP 2: CALENDAR ── */
+    .s2-wrap { width: 100%; max-width: 500px; }
+
+    .calendar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+    }
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 1.5rem;
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+    }
+    .cal-month-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.35rem; font-weight: 600; color: var(--text);
+    }
+    .cal-nav {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .cal-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .cal-nav:disabled { opacity: 0.28; cursor: not-allowed; }
+
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      padding: 0.8rem 1rem 0.3rem;
+    }
+    .cal-wd {
+      text-align: center; font-size: 0.62rem;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    }
+    .cal-days {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      gap: 3px; padding: 0.3rem 1rem 1rem;
+    }
+    .cal-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; font-size: 0.88rem; cursor: pointer;
+      border: 1px solid transparent; color: var(--text);
+      transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+    .cal-day:hover:not(.empty):not(.past) { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+    .cal-day.empty    { visibility: hidden; cursor: default; }
+    .cal-day.past     { color: var(--border); cursor: not-allowed; }
+    .cal-day.today    { border-color: var(--gold); color: var(--gold); }
+    .cal-day.selected {
+      background: linear-gradient(135deg, var(--accent), #BB3555);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 4px 16px rgba(224,85,114,0.45);
+    }
+    .cal-footer {
+      padding: 0.9rem 1.5rem; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cal-selected-txt { font-size: 0.82rem; color: var(--muted); transition: color 0.25s; }
+    .cal-selected-txt.has-date { color: var(--accent2); }
+
+    /* ── STEP 3: FOOD ── */
+    .s3-wrap { width: 100%; max-width: 680px; }
+
+    .food-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.9rem; margin-bottom: 0.5rem;
+    }
+    @media (max-width: 640px) { .food-grid { grid-template-columns: repeat(2,1fr); } }
+
+    .food-card {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: var(--radius); padding: 1.35rem 0.75rem 1.1rem;
+      cursor: pointer; text-align: center;
+      transition: border-color 0.25s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s, background 0.2s;
+    }
+    .food-card:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 14px 35px rgba(224,85,114,0.2); }
+    .food-card.selected {
+      border-color: var(--accent); background: var(--accent-dim);
+      transform: translateY(-5px) scale(1.03);
+      box-shadow: 0 14px 35px rgba(224,85,114,0.28);
+    }
+    .food-icon { width: 44px; height: 44px; margin: 0 auto 0.7rem; color: var(--accent2); }
+    .food-card.selected .food-icon { color: var(--accent); }
+    .food-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .food-desc { font-size: 0.68rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── STEP 4: SUMMARY ── */
+    .s4-wrap { width: 100%; max-width: 500px; text-align: center; }
+
+    .summary-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.25rem 2rem;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+      position: relative; overflow: hidden; margin-bottom: 0;
+      text-align: center;
+    }
+    .summary-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--gold), var(--accent2));
+    }
+    .summary-items {
+      display: flex; flex-direction: column; gap: 0.9rem;
+      text-align: left; margin: 1.75rem 0;
+    }
+    .s-item {
+      display: flex; align-items: center; gap: 0.9rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--surface2); border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .s-item-icon {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--accent-dim); border: 1px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--accent2);
+    }
+    .s-item-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.18rem; }
+    .s-item-value { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--text); }
+
+    .summary-quote {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 1rem; color: var(--accent2); line-height: 1.7;
+      border-top: 1px solid var(--border); padding-top: 1.35rem; margin-top: 0.25rem;
+    }
+
+    /* ── CONFIRMATION overlay ── */
+    .confirmation {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem; text-align: center;
+      background: var(--bg);
+      animation: stepIn 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+      display: none;
+    }
+    .confirmation.show { display: flex; }
+
+    .conf-hearts { display: flex; justify-content: center; gap: 0.6rem; margin-bottom: 1.5rem; }
+    .conf-h {
+      animation: heartPulse 1.5s ease-in-out infinite;
+      filter: drop-shadow(0 0 12px rgba(224,85,114,0.5));
+    }
+    .conf-h:nth-child(2) { animation-delay: 0.25s; }
+    .conf-h:nth-child(3) { animation-delay: 0.5s;  }
+
+    .conf-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 700; line-height: 1.0; color: var(--text); margin-bottom: 1rem;
+    }
+    .conf-title em { font-style: italic; color: var(--accent2); }
+    .conf-poem {
+      max-width: 400px; font-family: 'Cormorant Garamond', serif;
+      font-style: italic; font-size: 1.1rem; color: var(--accent2);
+      line-height: 1.8; margin: 1.5rem auto 0.5rem;
+    }
+    .conf-attr { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.1em; }
+
+    @media (max-width: 640px) {
+      .s1-btns { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="petals" id="petals"></div>
+
+<div class="progress" id="progress">
+  <div class="prog-dot active"></div>
+  <div class="prog-dot"></div>
+  <div class="prog-dot"></div>
+  <div class="prog-dot"></div>
+</div>
+
+<!-- ── STEP 1 ── -->
+<div id="step-1" class="step active">
+  <div class="s1-wrap">
+
+    <svg class="heart-svg" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hg1" x1="0" y1="0" x2="100" y2="90" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#F4A8C0"/>
+          <stop offset="100%" stop-color="#C03055"/>
+        </linearGradient>
+      </defs>
+      <path d="M50 85C50 85 5 54 5 27C5 14.3 15.7 4 29 7C37.5 9 45 14.5 50 21.5C55 14.5 62.5 9 71 7C84.3 4 95 14.3 95 27C95 54 50 85 50 85Z" fill="url(#hg1)"/>
+    </svg>
+
+    <div class="eyebrow">A very special question for you</div>
+
+    <h1 class="s1-title">
+      Will you go on<br/><em>a date</em> with me?
+    </h1>
+
+    <div class="gold-bar"></div>
+
+    <p class="s1-sub">
+      I've been thinking about this for a while now,<br/>
+      and there's truly no one else I'd rather be with.
+    </p>
+
+    <div class="s1-btns">
+      <button class="btn-yes" id="btn-yes" onclick="goToStep(2)">
+        Yes, absolutely!
+      </button>
+      <button class="btn-no" id="btn-no">
+        No
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── STEP 2: CALENDAR ── -->
+<div id="step-2" class="step">
+  <div class="s2-wrap">
+    <h2 class="step-title">Pick our <em>date</em></h2>
+    <p class="step-sub">Choose the day — I'll make sure everything is perfect.</p>
+
+    <div class="calendar">
+      <div class="cal-header">
+        <button class="cal-nav" id="cal-prev" onclick="changeMonth(-1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="cal-month-label" id="cal-month-lbl"></div>
+        <button class="cal-nav" id="cal-next" onclick="changeMonth(1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <div class="cal-weekdays">
+        <div class="cal-wd">Su</div><div class="cal-wd">Mo</div><div class="cal-wd">Tu</div>
+        <div class="cal-wd">We</div><div class="cal-wd">Th</div><div class="cal-wd">Fr</div><div class="cal-wd">Sa</div>
+      </div>
+
+      <div class="cal-days" id="cal-days"></div>
+
+      <div class="cal-footer">
+        <div class="cal-selected-txt" id="cal-selected-txt">No date selected yet</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goToStep(1)">Back</button>
+      <button class="btn-primary" id="cal-continue" disabled onclick="goToStep(3)">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STEP 3: FOOD ── -->
+<div id="step-3" class="step">
+  <div class="s3-wrap">
+    <h2 class="step-title">What are you <em>craving?</em></h2>
+    <p class="step-sub">Pick whatever sounds most delicious — I'll take care of the rest.</p>
+
+    <div class="food-grid" id="food-grid"></div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goToStep(2)">Back</button>
+      <button class="btn-primary" id="food-continue" disabled onclick="goToStep(4)">
+        Almost there
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STEP 4: SUMMARY ── -->
+<div id="step-4" class="step">
+  <div class="s4-wrap">
+    <h2 class="step-title" style="margin-bottom:1.5rem;">Our <em>date plan</em></h2>
+
+    <div class="summary-card">
+      <svg style="width:50px;height:50px;display:block;margin:0 auto 1rem;animation:heartPulse 1.5s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(224,85,114,0.5))" viewBox="0 0 100 90" fill="none">
+        <defs>
+          <linearGradient id="hg2" x1="0" y1="0" x2="100" y2="90" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F4A8C0"/><stop offset="100%" stop-color="#C03055"/>
+          </linearGradient>
+        </defs>
+        <path d="M50 85C50 85 5 54 5 27C5 14.3 15.7 4 29 7C37.5 9 45 14.5 50 21.5C55 14.5 62.5 9 71 7C84.3 4 95 14.3 95 27C95 54 50 85 50 85Z" fill="url(#hg2)"/>
+      </svg>
+
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;margin-bottom:0.3rem;">It's happening!</div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.25rem;">Here's everything we planned together</div>
+
+      <div class="summary-items">
+        <div class="s-item">
+          <div class="s-item-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div>
+            <div class="s-item-label">Date</div>
+            <div class="s-item-value" id="sum-date">—</div>
+          </div>
+        </div>
+        <div class="s-item">
+          <div class="s-item-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          </div>
+          <div>
+            <div class="s-item-label">Food</div>
+            <div class="s-item-value" id="sum-food">—</div>
+          </div>
+        </div>
+        <div class="s-item">
+          <div class="s-item-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div>
+            <div class="s-item-label">Company</div>
+            <div class="s-item-value">Just the two of us</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-quote">
+        "Every moment with you feels like the best kind of magic.<br/>
+        I can't wait to make more memories together."
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goToStep(3)">Change something</button>
+      <button class="btn-primary" onclick="confirmDate()">
+        It's a date!
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRMATION ── -->
+<div class="confirmation" id="confirmation">
+  <div class="bg-mesh" style="position:absolute;z-index:-1;"></div>
+
+  <div class="conf-hearts">
+    <svg class="conf-h" style="width:42px;height:42px" viewBox="0 0 100 90" fill="none">
+      <defs><linearGradient id="hgc1" x1="0" y1="0" x2="100" y2="90" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F4A8C0"/><stop offset="100%" stop-color="#C03055"/></linearGradient></defs>
+      <path d="M50 85C50 85 5 54 5 27C5 14.3 15.7 4 29 7C37.5 9 45 14.5 50 21.5C55 14.5 62.5 9 71 7C84.3 4 95 14.3 95 27C95 54 50 85 50 85Z" fill="url(#hgc1)"/>
+    </svg>
+    <svg class="conf-h" style="width:60px;height:60px" viewBox="0 0 100 90" fill="none">
+      <defs><linearGradient id="hgc2" x1="0" y1="0" x2="100" y2="90" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F4A8C0"/><stop offset="100%" stop-color="#C03055"/></linearGradient></defs>
+      <path d="M50 85C50 85 5 54 5 27C5 14.3 15.7 4 29 7C37.5 9 45 14.5 50 21.5C55 14.5 62.5 9 71 7C84.3 4 95 14.3 95 27C95 54 50 85 50 85Z" fill="url(#hgc2)"/>
+    </svg>
+    <svg class="conf-h" style="width:42px;height:42px" viewBox="0 0 100 90" fill="none">
+      <defs><linearGradient id="hgc3" x1="0" y1="0" x2="100" y2="90" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#D4A853"/><stop offset="100%" stop-color="#C03055"/></linearGradient></defs>
+      <path d="M50 85C50 85 5 54 5 27C5 14.3 15.7 4 29 7C37.5 9 45 14.5 50 21.5C55 14.5 62.5 9 71 7C84.3 4 95 14.3 95 27C95 54 50 85 50 85Z" fill="url(#hgc3)"/>
+    </svg>
+  </div>
+
+  <h2 class="conf-title">It's a<br/><em>date!</em></h2>
+
+  <div class="gold-bar" style="margin-top:1rem;"></div>
+
+  <p class="conf-poem">
+    "I carry your heart with me,<br/>
+    I carry it in my heart."
+  </p>
+  <div class="conf-attr">— E. E. Cummings</div>
+
+  <div style="margin-top:2.5rem;padding:1.5rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-width:420px;width:100%;">
+    <div style="font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem;">Our plan</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;" id="conf-date-display">—</div>
+    <div style="font-size:0.88rem;color:var(--muted);" id="conf-food-display">—</div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+const state = { selectedDate: null, selectedFood: null, currentStep: 1 };
+const today = new Date();
+let calYear  = today.getFullYear();
+let calMonth = today.getMonth();
+
+// ─── PETALS ──────────────────────────────────────────
+(function spawnPetals() {
+  const c = document.getElementById('petals');
+  const colors = [
+    'rgba(224,85,114,0.55)','rgba(244,168,192,0.50)',
+    'rgba(212,168,83,0.42)','rgba(255,215,225,0.48)',
+    'rgba(200,70,95,0.42)',
+  ];
+  for (let i = 0; i < 24; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const w = 8 + Math.random() * 11;
+    p.style.cssText = [
+      `left:${Math.random()*100}%`,
+      `width:${w}px`,
+      `height:${w * 1.2}px`,
+      `background:${colors[i % colors.length]}`,
+      `border-radius:${Math.random() > .5 ? '50% 0 50% 50%' : '0 50% 50% 50%'}`,
+      `animation-duration:${7 + Math.random() * 9}s`,
+      `animation-delay:${Math.random() * 12}s`,
+    ].join(';');
+    c.appendChild(p);
+  }
+})();
+
+// ─── NO BUTTON ESCAPE ────────────────────────────────
+(function setupNoBtn() {
+  const btn = document.getElementById('btn-no');
+
+  document.addEventListener('mousemove', e => {
+    const r = btn.getBoundingClientRect();
+    const bx = r.left + r.width  / 2;
+    const by = r.top  + r.height / 2;
+    const dist = Math.hypot(e.clientX - bx, e.clientY - by);
+
+    if (dist < 110) {
+      const angle = Math.atan2(by - e.clientY, bx - e.clientX);
+      const margin = 80;
+      const nx = Math.max(margin, Math.min(window.innerWidth  - margin, bx + Math.cos(angle) * 220));
+      const ny = Math.max(margin, Math.min(window.innerHeight - margin, by + Math.sin(angle) * 220));
+
+      btn.style.position  = 'fixed';
+      btn.style.left      = nx + 'px';
+      btn.style.top       = ny + 'px';
+      btn.style.transform = 'translate(-50%, -50%)';
+      btn.style.zIndex    = '500';
+      btn.style.transition= 'left .18s, top .18s';
+    }
+  });
+
+  btn.addEventListener('click', e => e.preventDefault());
+})();
+
+// ─── STEP NAVIGATION ─────────────────────────────────
+function goToStep(n) {
+  const cur = document.getElementById('step-' + state.currentStep);
+  cur.classList.add('leaving');
+  setTimeout(() => {
+    cur.classList.remove('active','leaving');
+    state.currentStep = n;
+    const nxt = document.getElementById('step-' + n);
+    nxt.style.display = 'flex';
+    nxt.classList.add('active');
+    updateProgress(n);
+    if (n === 2) renderCalendar();
+    if (n === 3) renderFoods();
+    if (n === 4) renderSummary();
+  }, 440);
+}
+
+function updateProgress(n) {
+  document.querySelectorAll('.prog-dot').forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i + 1 === n) d.classList.add('active');
+    else if (i + 1 < n) d.classList.add('done');
+  });
+}
+
+// ─── CALENDAR ────────────────────────────────────────
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar() {
+  document.getElementById('cal-month-lbl').textContent = MONTH_NAMES[calMonth] + ' ' + calYear;
+
+  const prevBtn = document.getElementById('cal-prev');
+  prevBtn.disabled = (calYear === today.getFullYear() && calMonth === today.getMonth());
+
+  const container = document.getElementById('cal-days');
+  container.innerHTML = '';
+
+  const firstDay    = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const todayMid    = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+  for (let i = 0; i < firstDay; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day empty';
+    container.appendChild(e);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell     = document.createElement('div');
+    const cellTime = new Date(calYear, calMonth, d).getTime();
+    cell.className = 'cal-day';
+    cell.textContent = d;
+
+    if (cellTime < todayMid) {
+      cell.classList.add('past');
+    } else {
+      if (cellTime === todayMid) cell.classList.add('today');
+
+      if (state.selectedDate &&
+          state.selectedDate.getFullYear() === calYear &&
+          state.selectedDate.getMonth()    === calMonth &&
+          state.selectedDate.getDate()     === d) {
+        cell.classList.add('selected');
+      }
+
+      cell.addEventListener('click', () => pickDate(calYear, calMonth, d));
+    }
+    container.appendChild(cell);
+  }
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function pickDate(y, m, d) {
+  state.selectedDate = new Date(y, m, d);
+  const el = document.getElementById('cal-selected-txt');
+  el.textContent = state.selectedDate.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  el.classList.add('has-date');
+  document.getElementById('cal-continue').disabled = false;
+  renderCalendar();
+}
+
+// ─── FOOD ────────────────────────────────────────────
+const FOODS = [
+  { name:'Italian',       desc:'Pasta, pizza & wine',   icon:'<path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z" stroke-width="1.5"/><path d="M12 8c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2s2-.9 2-2v-4c0-1.1-.9-2-2-2z" stroke-width="1.5"/>' },
+  { name:'Japanese',      desc:'Sushi, ramen & omakase', icon:'<rect x="3" y="10" width="18" height="8" rx="2" stroke-width="1.5"/><path d="M7 10V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4" stroke-width="1.5"/><line x1="12" y1="10" x2="12" y2="18" stroke-width="1.5"/>' },
+  { name:'French',        desc:'Bistro, crêpes & vin',   icon:'<path d="M8 22h8M12 22v-5M5 17c0-3.87 3.13-7 7-7s7 3.13 7 7" stroke-width="1.5"/><circle cx="12" cy="7" r="3" stroke-width="1.5"/>' },
+  { name:'Mexican',       desc:'Tacos & guacamole',      icon:'<path d="M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke-width="1.5"/><path d="M3 12h18" stroke-width="1.5"/><path d="M6.5 16.5c1.5 2 7.5 4 11 0" stroke-width="1.5"/>' },
+  { name:'Mediterranean', desc:'Mezze, seafood & olives', icon:'<circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M3 12h18M12 3c-3 3-4.5 6-4.5 9s1.5 6 4.5 9M12 3c3 3 4.5 6 4.5 9s-1.5 6-4.5 9" stroke-width="1.5"/>' },
+  { name:'American',      desc:'Burgers & BBQ',           icon:'<path d="M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" stroke-width="1.5"/><path d="M3 10h18M3 14h18" stroke-width="1.5"/>' },
+  { name:'Thai',          desc:'Pad thai & curry',        icon:'<circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M8 13c1-3 7-3 8 0" stroke-width="1.5"/><line x1="12" y1="13" x2="12" y2="17" stroke-width="1.5"/>' },
+  { name:'Surprise me!',  desc:"Let's be adventurous",   icon:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke-width="1.5"/>' },
+];
+
+function renderFoods() {
+  const g = document.getElementById('food-grid');
+  g.innerHTML = '';
+  FOODS.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'food-card' + (state.selectedFood === f.name ? ' selected' : '');
+    card.innerHTML = `
+      <svg class="food-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">${f.icon}</svg>
+      <div class="food-name">${f.name}</div>
+      <div class="food-desc">${f.desc}</div>
+    `;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.food-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedFood = f.name;
+      document.getElementById('food-continue').disabled = false;
+    });
+    g.appendChild(card);
+  });
+}
+
+// ─── SUMMARY ─────────────────────────────────────────
+function renderSummary() {
+  if (state.selectedDate) {
+    document.getElementById('sum-date').textContent =
+      state.selectedDate.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+  if (state.selectedFood) {
+    document.getElementById('sum-food').textContent = state.selectedFood + ' cuisine';
+  }
+}
+
+// ─── CONFIRM ─────────────────────────────────────────
+function confirmDate() {
+  const overlay = document.getElementById('confirmation');
+  overlay.classList.add('show');
+
+  if (state.selectedDate) {
+    document.getElementById('conf-date-display').textContent =
+      state.selectedDate.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  }
+  if (state.selectedFood) {
+    document.getElementById('conf-food-display').textContent = state.selectedFood + ' cuisine — just the two of us';
+  }
+
+  document.getElementById('progress').style.display = 'none';
+  launchConfetti();
+}
+
+// ─── CONFETTI HEARTS ─────────────────────────────────
+function launchConfetti() {
+  const colors = ['#E05572','#F4A8C0','#D4A853','#EEC87A','#FF8FA8'];
+  for (let i = 0; i < 36; i++) {
+    setTimeout(() => {
+      const p = document.getElementById('petals');
+      const el = document.createElement('div');
+      el.className = 'petal';
+      el.style.cssText = [
+        `left:${10 + Math.random() * 80}%`,
+        `width:${10 + Math.random() * 14}px`,
+        `height:${12 + Math.random() * 16}px`,
+        `background:${colors[i % colors.length]}`,
+        `border-radius:50% 0 50% 50%`,
+        `animation-duration:${4 + Math.random() * 5}s`,
+        `animation-delay:0s`,
+        `opacity:1`,
+      ].join(';');
+      p.appendChild(el);
+      setTimeout(() => el.remove(), 9000);
+    }, i * 80);
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────
+renderCalendar();
+</script>
+</body>
+</html>
